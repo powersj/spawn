@@ -1,4 +1,4 @@
-package main
+package outputs
 
 type Output struct {
 	Stdout []Stdout `toml:"stdout"`

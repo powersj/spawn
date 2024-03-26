@@ -1,59 +1,76 @@
 package main
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
+	"html/template"
 	"os"
-	"text/template"
 
-	"github.com/pelletier/go-toml/v2"
+	"github.com/BurntSushi/toml"
+	"github.com/mitchellh/mapstructure"
+	"github.com/powersj/spawn/generators"
+	"github.com/powersj/spawn/serializers"
 )
 
 type Config struct {
-	Agent      Agent      `toml:"agent"`
-	Generator  Generator  `toml:"generator"`
-	Serializer Serializer `toml:"serializer"`
-	Output     Output     `toml:"output"`
+	Agent      Agent                       `toml:"agent"`
+	Generator  map[string][]map[string]any `toml:"generator"`
+	Serializer map[string][]map[string]any `toml:"serializer"`
 }
 
 func main() {
-	configPath := "examples/agent.toml"
-	f, err := os.ReadFile(configPath)
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
+	var conf Config
+	if _, err := toml.DecodeFile("examples/agent.toml", &conf); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
-	var config Config
-	decoder := toml.NewDecoder(bytes.NewReader(f)).DisallowUnknownFields()
-	if err := decoder.Decode(&config); err != nil {
-		var strict *toml.StrictMissingError
-		if errors.As(err, &strict) {
-			panic(fmt.Errorf("unrecognized config option found in %q:\n%s", configPath, strict.String()))
+	gens := make(map[string]generators.Generator)
+	funcMap := make(template.FuncMap)
+	for genType, genConfigs := range conf.Generator {
+		constructor, exists := generators.Registry[genType]
+		if !exists {
+			fmt.Printf("Generator type %s not found\n", genType)
+			continue
 		}
-		panic(fmt.Errorf("unable to unmarshal config file %q: %w", configPath, err))
+		for _, genConf := range genConfigs {
+			generator := constructor()
+			if err := mapstructure.Decode(genConf, generator); err != nil {
+				fmt.Println("Error decoding config:", err)
+				continue
+			}
+			if id, ok := genConf["id"].(string); ok {
+				gens[id] = generator
+				funcMap[id] = generator.Generate
+			} else {
+				fmt.Println("ID missing for generator", genConf)
+			}
+		}
 	}
 
-	fmt.Printf("configuration: %v\n", config)
-
-	for _, serializer := range config.Serializer.Templates {
-		funcMap := template.FuncMap{
-			"float": config.Generator.RandomFloat64[0].Generate,
-			//"int":   config.Generator.RandomInt64[0].Generate,
+	serials := make(map[string]serializers.Serializer)
+	for serialType, serialConfig := range conf.Serializer {
+		constructor, exists := serializers.Registry[serialType]
+		if !exists {
+			fmt.Printf("Generator type %s not found\n", serialType)
+			continue
+		}
+		for _, genConf := range serialConfig {
+			generator := constructor()
+			if err := mapstructure.Decode(genConf, generator); err != nil {
+				fmt.Println("Error decoding config:", err)
+				continue
+			}
+			if id, ok := genConf["id"].(string); ok {
+				serials[id] = generator
+			} else {
+				fmt.Println("ID missing for generator", genConf)
+			}
 		}
 
-		tmpl, err := template.New("example").Funcs(funcMap).Parse(serializer.Template)
-		if err != nil {
-			panic(err)
+		for _, serial := range serials {
+			out := serial.Serialize(funcMap)
+			fmt.Println(out)
 		}
 
-		var out bytes.Buffer
-		if err := tmpl.Execute(&out, nil); err != nil {
-			panic(err)
-		}
-
-		//os.Stdout.Write(out.Bytes())
-		fmt.Println(out.String())
 	}
 }

@@ -1,31 +1,26 @@
 # --------------------------------------------
-[[generator.random_float64]]
+[[generator.randomfloat64]]
     id = "float"
+
+[[generator.randomint64]]
+    id = "int"
 
 [[serializer.template]]
     id = "float"
-    template = "foo value={{ float }},value2={{ float }}"
+    template = """
+foo value={{ float }},value2={{ int }}
+foo value={{ float }},value2={{ int }}
+foo value={{ float }},value2={{ int }}
+"""
 
 [[output.stdout]]
     serializers = ["float"]
 
-# --------------------------------------------
-#[[generator.random_int64]]
-#    id = "int"
-
-#[[serializer.template]]
-#    id = "int"
-#    template = "bar values={{ .int }}"
-
-#[[output.stdout]]
-#    serializers = ["int"]
-
-
 ## Preflight Checks
 ## ----------------
 ## Only one agent section
-## All generators have an ID
-## All serializers have an ID
+## All generators have a unique, non-empty ID
+## All serializers have a unique, non-empty ID
 ## Serializer template references defined generator ID
 ## Output references defined serializer ID
 ## Warning if a generator is not referenced by a serializer
