@@ -2,8 +2,9 @@
 
 ## TODO
 
-* Create output config parser
-* Create standard config options for parsers (logger + debug)
+* Create standard config options
+  * logger
+  * interval
 
 ## Preflight Checks
 
@@ -17,10 +18,8 @@
 
 ## Outputs
 
-* stdout
-* stderr
 * http
-* socket?
+* socket
 
 ## Generators
 

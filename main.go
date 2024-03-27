@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"slices"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/mitchellh/mapstructure"
 	"github.com/powersj/spawn/generators"
+	"github.com/powersj/spawn/outputs"
 	"github.com/powersj/spawn/serializers"
 )
 
@@ -15,6 +18,7 @@ type Config struct {
 	Agent      Agent                       `toml:"agent"`
 	Generator  map[string][]map[string]any `toml:"generator"`
 	Serializer map[string][]map[string]any `toml:"serializer"`
+	Output     map[string][]map[string]any `toml:"output"`
 }
 
 func main() {
@@ -24,7 +28,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	gens := make(map[string]generators.Generator)
 	funcMap := make(template.FuncMap)
 	for genType, genConfigs := range conf.Generator {
 		constructor, exists := generators.Registry[genType]
@@ -39,11 +42,27 @@ func main() {
 				continue
 			}
 			if id, ok := genConf["id"].(string); ok {
-				gens[id] = generator
 				funcMap[id] = generator.Generate
 			} else {
 				fmt.Println("ID missing for generator", genConf)
 			}
+		}
+	}
+
+	outs := make(map[string]outputs.Output)
+	for outputType, outputConfig := range conf.Output {
+		constructor, exists := outputs.Registry[outputType]
+		if !exists {
+			fmt.Printf("Output type %s not found\n", outputType)
+			continue
+		}
+		for _, outConf := range outputConfig {
+			output := constructor()
+			if err := mapstructure.Decode(outConf, output); err != nil {
+				fmt.Println("Error decoding config:", err)
+				continue
+			}
+			outs[outputType] = output
 		}
 	}
 
@@ -66,11 +85,25 @@ func main() {
 				fmt.Println("ID missing for generator", genConf)
 			}
 		}
+	}
 
-		for _, serial := range serials {
-			out := serial.Serialize(funcMap)
-			fmt.Println(out)
+	ticker := time.NewTicker(time.Duration(5 * time.Second))
+	for {
+		<-ticker.C
+		for serial_id, serial := range serials {
+			go generate(serial_id, serial, funcMap, outs)
 		}
+	}
+}
 
+func generate(serial_id string, serial serializers.Serializer, funcMap template.FuncMap, outs map[string]outputs.Output) {
+	out := serial.Serialize(funcMap)
+	for _, o := range outs {
+		if slices.Contains(o.GetSerializers(), serial_id) {
+			if err := o.Write(out); err != nil {
+				fmt.Println("Error writing output:", err)
+				os.Exit(1)
+			}
+		}
 	}
 }

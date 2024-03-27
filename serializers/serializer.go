@@ -10,14 +10,14 @@ var Registry = map[string]func() Serializer{
 }
 
 type Serializer interface {
-	Serialize(template.FuncMap) string
+	Serialize(template.FuncMap) []byte
 }
 
 type Template struct {
 	Template string `toml:"template"`
 }
 
-func (t *Template) Serialize(funcMap template.FuncMap) string {
+func (t *Template) Serialize(funcMap template.FuncMap) []byte {
 	tmpl, err := template.New("example").Funcs(funcMap).Parse(t.Template)
 	if err != nil {
 		panic(err)
@@ -28,5 +28,5 @@ func (t *Template) Serialize(funcMap template.FuncMap) string {
 		panic(err)
 	}
 
-	return out.String()
+	return out.Bytes()
 }

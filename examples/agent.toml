@@ -6,22 +6,21 @@
     id = "int"
 
 [[serializer.template]]
-    id = "float"
+    id = "lineprotocol"
     template = """
 foo value={{ float }},value2={{ int }}
 foo value={{ float }},value2={{ int }}
 foo value={{ float }},value2={{ int }}
 """
 
-[[output.stdout]]
-    serializers = ["float"]
+[[serializer.template]]
+    id = "json"
+    template = """
+{ "foo": {{ int }} }
+"""
 
-## Preflight Checks
-## ----------------
-## Only one agent section
-## All generators have a unique, non-empty ID
-## All serializers have a unique, non-empty ID
-## Serializer template references defined generator ID
-## Output references defined serializer ID
-## Warning if a generator is not referenced by a serializer
-## Warning if a serializer is not referenced by an output
+[[output.stdout]]
+    serializers = ["lineprotocol"]
+
+[[output.stderr]]
+    serializers = ["json"]
