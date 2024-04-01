@@ -2,108 +2,106 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"os"
-	"slices"
-	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/mitchellh/mapstructure"
-	"github.com/powersj/spawn/generators"
-	"github.com/powersj/spawn/outputs"
-	"github.com/powersj/spawn/serializers"
+	"github.com/powersj/spawn/agent"
+	"github.com/powersj/spawn/config"
+	"github.com/powersj/spawn/internal"
+	"github.com/urfave/cli/v2"
 )
 
-type Config struct {
-	Agent      Agent                       `toml:"agent"`
-	Generator  map[string][]map[string]any `toml:"generator"`
-	Serializer map[string][]map[string]any `toml:"serializer"`
-	Output     map[string][]map[string]any `toml:"output"`
-}
+const (
+	cliDescription = `spawn is a TOML config driven agent to generate data.
+
+The configuration consists of generators, serializers, and outputs. Generators
+are used to generate random data. Serializers determine a specific output data
+type and format, and outputs is where the data is sent.
+
+Agent level settings are also available to control logging and generation of
+data.
+`
+)
 
 func main() {
-	var conf Config
-	if _, err := toml.DecodeFile("examples/agent.toml", &conf); err != nil {
+	app := &cli.App{
+		Name:        "spawn",
+		Usage:       "Config driven agent for generating metrics.",
+		Description: cliDescription,
+		Suggest:     true,
+		Commands: []*cli.Command{
+			{
+				Name:        "run",
+				Usage:       "Runs the generator",
+				Description: "Runs the generator",
+				Action: func(ctx *cli.Context) error {
+					if ctx.NArg() == 0 {
+						return fmt.Errorf("missing TOML file")
+					} else if ctx.NArg() > 1 {
+						return fmt.Errorf("too many arguments")
+					}
+
+					c, _ := config.NewConfig()
+					a, _ := agent.NewAgent(c)
+
+					pprof := agent.NewPprofServer()
+					pprof.Start(c.Agent.PprofPort)
+
+					return a.Run()
+				},
+			},
+			{
+				Name:        "toml",
+				Usage:       "Used to verify a TOML configuration format",
+				Description: "Used to verify a TOML configuration format",
+				Action: func(ctx *cli.Context) error {
+					if ctx.NArg() == 0 {
+						return fmt.Errorf("missing TOML file")
+					} else if ctx.NArg() > 1 {
+						return fmt.Errorf("too many arguments")
+					}
+
+					var data any
+					if _, err := toml.DecodeFile(ctx.Args().First(), &data); err != nil {
+						return fmt.Errorf("Invalid TOML File: %w", err)
+					}
+
+					fmt.Println("The TOML file is valid.")
+					return nil
+				},
+			},
+			{
+				Name:        "once",
+				Usage:       "Run all generators and serializers and output to stdout",
+				Description: "Run all generators and serializers and output to stdout",
+				Action: func(ctx *cli.Context) error {
+					if ctx.NArg() == 0 {
+						return fmt.Errorf("missing TOML file")
+					} else if ctx.NArg() > 1 {
+						return fmt.Errorf("too many arguments")
+					}
+
+					c, _ := config.NewConfig()
+					a, _ := agent.NewAgent(c)
+
+					fmt.Println("skipping outputs in run once mode")
+					return a.RunOnce()
+				},
+			},
+			{
+				Name:        "version",
+				Usage:       "Print version, build, and platform info",
+				Description: "Print version, build, and platform info",
+				Action: func(*cli.Context) error {
+					fmt.Println(internal.AppVersion())
+					return nil
+				},
+			},
+		},
+	}
+
+	if err := app.Run(os.Args); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-	}
-
-	funcMap := make(template.FuncMap)
-	for genType, genConfigs := range conf.Generator {
-		constructor, exists := generators.Registry[genType]
-		if !exists {
-			fmt.Printf("Generator type %s not found\n", genType)
-			continue
-		}
-		for _, genConf := range genConfigs {
-			generator := constructor()
-			if err := mapstructure.Decode(genConf, generator); err != nil {
-				fmt.Println("Error decoding config:", err)
-				continue
-			}
-			if id, ok := genConf["id"].(string); ok {
-				funcMap[id] = generator.Generate
-			} else {
-				fmt.Println("ID missing for generator", genConf)
-			}
-		}
-	}
-
-	outs := make(map[string]outputs.Output)
-	for outputType, outputConfig := range conf.Output {
-		constructor, exists := outputs.Registry[outputType]
-		if !exists {
-			fmt.Printf("Output type %s not found\n", outputType)
-			continue
-		}
-		for _, outConf := range outputConfig {
-			output := constructor()
-			if err := mapstructure.Decode(outConf, output); err != nil {
-				fmt.Println("Error decoding config:", err)
-				continue
-			}
-			outs[outputType] = output
-		}
-	}
-
-	serials := make(map[string]serializers.Serializer)
-	for serialType, serialConfig := range conf.Serializer {
-		constructor, exists := serializers.Registry[serialType]
-		if !exists {
-			fmt.Printf("Generator type %s not found\n", serialType)
-			continue
-		}
-		for _, genConf := range serialConfig {
-			generator := constructor()
-			if err := mapstructure.Decode(genConf, generator); err != nil {
-				fmt.Println("Error decoding config:", err)
-				continue
-			}
-			if id, ok := genConf["id"].(string); ok {
-				serials[id] = generator
-			} else {
-				fmt.Println("ID missing for generator", genConf)
-			}
-		}
-	}
-
-	ticker := time.NewTicker(time.Duration(5 * time.Second))
-	for {
-		<-ticker.C
-		for serial_id, serial := range serials {
-			go generate(serial_id, serial, funcMap, outs)
-		}
-	}
-}
-
-func generate(serial_id string, serial serializers.Serializer, funcMap template.FuncMap, outs map[string]outputs.Output) {
-	out := serial.Serialize(funcMap)
-	for _, o := range outs {
-		if slices.Contains(o.GetSerializers(), serial_id) {
-			if err := o.Write(out); err != nil {
-				fmt.Println("Error writing output:", err)
-				os.Exit(1)
-			}
-		}
 	}
 }

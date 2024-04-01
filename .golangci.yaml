@@ -1,0 +1,43 @@
+linters:
+  disable-all: true
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - dogsled
+    - errcheck
+    - errname
+    - errorlint
+    - exportloopref
+    - gocheckcompilerdirectives
+    - gocritic
+    - goprintffuncname
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacebloat
+    - lll
+    - makezero
+    - nakedret
+    - nilerr
+    - nolintlint
+    - prealloc
+    - predeclared
+    - revive
+    - sqlclosecheck
+    - staticcheck
+    - tenv
+    - testifylint
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+
+linters-settings:
+  lll:
+    line-length: 100
+    tab-width: 4
+  misspell:
+    locale: US

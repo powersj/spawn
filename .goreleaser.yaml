@@ -1,0 +1,75 @@
+# see docs/goreleaser.md for instructions and details on this file
+#
+before:
+  hooks:
+    - go mod tidy
+    - make
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    ldflags:
+      - '-s -w'
+      - '-X github.com/powersj/spawn/internal.Version={{ .Env.version }}'
+      - '-X github.com/powersj/spawn/internal.Branch={{ .Env.branch }}'
+      - '-X github.com/powersj/spawn/internal.Commit={{ .Env.commit }}'
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+      - goos: darwin
+        goarch: amd64
+
+release:
+  skip_upload: true
+
+nfpms:
+  - package_name: spawn
+    homepage: https://github.com/powersj/spawn
+    maintainer: Joshua Powers <powers@fastmail.com>
+    description: spawn is a TOML config driven agent to generate data.
+    formats:
+      - deb
+      - rpm
+    # Name template result:
+    # spawn-2.0.0.aarch64.rpm
+    # spawn-2.0.0.x86_64.rpm
+    # spawn_2.0.0_arm64.deb
+    # spawn_2.0.0_amd64.deb
+    file_name_template: >-
+      {{- if eq .ConventionalExtension ".deb" }}
+        {{- .PackageName }}_{{ .Env.version }}_{{ .Arch }}
+      {{- else if eq .ConventionalExtension ".rpm" }}
+        {{- .PackageName }}-{{ .Env.version }}.
+        {{- if eq .Arch "amd64" }}x86_64
+        {{- else if eq .Arch "arm64" }}aarch64
+        {{- else }}{{ .Arch }}{{ end }}
+      {{- end }}
+      {{- .ConventionalExtension }}
+
+archives:
+  - format: tar.gz
+    files:
+      - config.toml
+      - README.md
+    name_template: >-
+      {{ .ProjectName }}-{{ .Env.version }}-{{- tolower .Os }}-
+      {{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+      - goos: darwin
+        format: zip
+
+checksum:
+  name_template: '{{ .ProjectName }}-checksums.txt'
+snapshot:
+  name_template: "{{ .Env.version }}-snapshot"
+changelog:
+  sort: asc

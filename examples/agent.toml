@@ -1,4 +1,7 @@
 # --------------------------------------------
+[agent]
+    pprof_port = "6060"
+
 [[generator.randomfloat64]]
     id = "float"
 
