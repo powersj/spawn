@@ -41,8 +41,14 @@ func main() {
 						return fmt.Errorf("too many arguments")
 					}
 
-					c, _ := config.NewConfig()
-					a, _ := agent.NewAgent(c)
+					c, err := config.NewConfig(ctx.Args().First())
+					if err != nil {
+						return fmt.Errorf("Error loading config: %w", err)
+					}
+					a, err := agent.NewAgent(c)
+					if err != nil {
+						return fmt.Errorf("Error creating agent: %w", err)
+					}
 
 					pprof := agent.NewPprofServer()
 					pprof.Start(c.Agent.PprofPort)
@@ -81,8 +87,14 @@ func main() {
 						return fmt.Errorf("too many arguments")
 					}
 
-					c, _ := config.NewConfig()
-					a, _ := agent.NewAgent(c)
+					c, err := config.NewConfig(ctx.Args().First())
+					if err != nil {
+						return fmt.Errorf("Error loading config: %w", err)
+					}
+					a, err := agent.NewAgent(c)
+					if err != nil {
+						return fmt.Errorf("Error creating agent: %w", err)
+					}
 
 					fmt.Println("skipping outputs in run once mode")
 					return a.RunOnce()

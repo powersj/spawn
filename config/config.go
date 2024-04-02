@@ -21,9 +21,9 @@ type Config struct {
 	Output     map[string][]map[string]any `toml:"output"`
 }
 
-func NewConfig() (*Config, error) {
+func NewConfig(filename string) (*Config, error) {
 	var conf Config
-	if _, err := toml.DecodeFile("examples/agent.toml", &conf); err != nil {
+	if _, err := toml.DecodeFile(filename, &conf); err != nil {
 		return nil, err
 	}
 
