@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  build:
+  all:
     docker:
       - image: cimg/go:1.22
     steps:
@@ -27,6 +27,6 @@ jobs:
           command: make lint
 
 workflows:
-  sample:
+  ci:
     jobs:
-      - build
+      - all
