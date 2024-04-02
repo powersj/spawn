@@ -1,17 +1,49 @@
 # Spawn
 
-*spawn is a TOML config driven agent to generate data*
+*TOML config driven agent to generate data*
 
-[![Build Status](https://travis-ci.org/powersj/spawn.svg?branch=master)](https://travis-ci.org/powersj/spawn/) [![Go Report Card](https://goreportcard.com/badge/github.com/powersj/spawn)](https://goreportcard.com/report/github.com/powersj/spawn) [![Go Reference](https://pkg.go.dev/badge/github.com/powersj/spawn.svg)](https://pkg.go.dev/github.com/powersj/spawn)
+[![CircleCI](https://circleci.com/gh/powersj/spawn.svg?style=svg)](https://circleci.com/gh/powersj/spawn) [![Go Reference](https://pkg.go.dev/badge/github.com/powersj/spawn.svg)](https://pkg.go.dev/github.com/powersj/spawn)
 
 ## Overview
 
+This is an agent to generate data via a TOML configuration file. Users define
+a serializer format and call generator functions to generate data at each
+interval. The generated data is then sent the corresponding outputs.
+
+To create a basic JSON with some random numeric values:
+
+```TOML
+[[generator.randomfloat64]]
+    id = "float" # id used to reference in serializer template
+[[serializer.template]]
+    id = "json"  # id used to reference in outputs
+    template = """{ "value": {{ float }} }"""
+[[output.stderr]]
+    serializers = ["json"]
+```
+
+Would produce a different JSON value at each interval in the format:
+
+```json
+{ "value": 123.456 }
+```
+
 ## Install
+
+Pre-build binaries are available on the releases page.
 
 ## Usage
 
+To generate data use the `run` subcommand:
+
 ```sh
+./spawn run <toml file>
 ```
+
+The other subcommands include:
+
+* `once`: To run all serializers and generators once and output to stdout
+* `toml`: To validate a TOML file
 
 ## Contributing
 

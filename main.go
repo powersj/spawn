@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	cliDescription = `spawn is a TOML config driven agent to generate data.
+	cliDescription = `spawn is a TOML config driven agent to generate data
 
 The configuration consists of generators, serializers, and outputs. Generators
 are used to generate random data. Serializers determine a specific output data
@@ -26,7 +26,7 @@ data.
 func main() {
 	app := &cli.App{
 		Name:        "spawn",
-		Usage:       "Config driven agent for generating metrics.",
+		Usage:       "TOML config driven agent to generate data",
 		Description: cliDescription,
 		Suggest:     true,
 		Commands: []*cli.Command{
