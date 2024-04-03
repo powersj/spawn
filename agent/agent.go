@@ -10,6 +10,7 @@ import (
 	"github.com/powersj/spawn/config"
 	"github.com/powersj/spawn/generators"
 	"github.com/powersj/spawn/outputs"
+	"github.com/powersj/spawn/outputs/stdout"
 	"github.com/powersj/spawn/serializers"
 )
 
@@ -56,7 +57,7 @@ func (a *Agent) Run() error {
 }
 
 func (a *Agent) RunOnce() error {
-	o := outputs.Stdout{}
+	o := stdout.Stdout{}
 
 	funcMap, err := generators.Load(a.config.Generator)
 	if err != nil {
