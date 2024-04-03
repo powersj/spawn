@@ -21,4 +21,81 @@ Pick library and/or some standard
 
 ## Generators
 
-* Figure out what generators to create
+* Numeric
+  * RandInt
+  * RandInt16
+  * RandInt32
+  * RandInt64
+  * RandUint
+  * RandUint16
+  * RandUint32
+  * RandUint64
+  * RandFloat32
+  * RandFloat64
+  * RandBool
+  * RandComplex64
+  * RandComplex128
+* Geography
+  * USZipCode
+  * ZipCodeInternational
+  * USState
+  * City
+  * Country
+  * CountryCode
+  * CurrencyCode
+  * Latitude
+  * Longitude
+  * Address
+  * GeoCoordinate
+  * Mountain
+  * River
+  * Ocean
+  * Sea
+* Dates and Time
+  * Timezone
+  * Unix Timestamp
+  * Timestamp
+  * DateTime
+  * PastDate
+  * FutureDate
+* Strings
+  * PhoneNumberAreaCode
+  * Email Address
+  * Username
+* Financial
+  * CreditCardNumber
+  * RoutingNumber
+  * AccountNumber
+* Internet
+  * IPv4
+  * IPv6
+  * MAC Address
+  * UserAgent
+  * ProgrammingLanguage
+  * Technology
+  * UUID
+* Text/Language
+  * RandWord
+  * RandSentence
+  * RandParagraph
+  * LoremIpsum
+* Codes and Identifiers
+  * Barcode
+  * QRCode
+* Biomedical
+  * Gene
+  * Protein
+  * BiologicalProcess
+* Demographic
+  * Name
+  * FirstName
+  * LastName
+  * Gender
+  * Age
+  * JobTitle
+* Science
+  * Element
+  * Compound
+  * ScientificNumber
+* Color
+  * HEXColor
